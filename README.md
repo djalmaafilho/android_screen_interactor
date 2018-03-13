@@ -6,3 +6,5 @@ Capture Screen to improve interaction with device.
 
 You Need ADB instaled in your computer.
 This is simple if you instaled Android Studio.
+
+<img src="screenshot.png" width="60%">
