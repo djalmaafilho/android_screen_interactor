@@ -28,7 +28,7 @@ import javax.swing.SwingConstants;
 
 public class ScreenInteractor {
 	 
-	private static final boolean ROTATE = true;
+	private static final boolean ROTATE = false;
 	static String ADB_PATH = "/Users/diegodesouza/Library/Android/sdk/platform-tools/adb ";
 	static String ANDROID_FOLDER = "/sdcard/screen_capture/";
 	static String COMPUTER_FOLDER = "/Users/diegodesouza/";
@@ -37,7 +37,7 @@ public class ScreenInteractor {
 	static ExecutorService deletePool = Executors.newSingleThreadExecutor();
 	static boolean terminate = false;
 	static int proportion = 1;
-	static int margin = 30;
+	static int margin = 10;
 	static Runtime runtime = Runtime.getRuntime();
 	static Integer screenNumber = 1;
 	static JLabel imageViewer;
@@ -67,7 +67,7 @@ public class ScreenInteractor {
 		
 		screen.add(msg, BorderLayout.NORTH);
 		screen.add(imageViewer, BorderLayout.CENTER);
-		screen.addWindowListener(new WindowListener() {
+		screen.addWindowListener(new WindowListener() {			
 			@Override
 			public void windowOpened(WindowEvent e) {
 			}
