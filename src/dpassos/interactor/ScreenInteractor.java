@@ -12,6 +12,8 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.concurrent.ExecutorService;
@@ -26,9 +28,10 @@ import javax.swing.SwingConstants;
 
 public class ScreenInteractor {
 	 
-	static String ADB_PATH = "/Users/{myuser}/Library/Android/sdk/platform-tools/adb ";
+	private static final boolean ROTATE = true;
+	static String ADB_PATH = "/Users/diegodesouza/Library/Android/sdk/platform-tools/adb ";
 	static String ANDROID_FOLDER = "/sdcard/screen_capture/";
-	static String COMPUTER_FOLDER = "/Users/{myuser}/";
+	static String COMPUTER_FOLDER = "/Users/diegodesouza/";
 	static String FILE_NAME = ANDROID_FOLDER+"screen";
 	static ExecutorService capturePool = Executors.newSingleThreadExecutor();
 	static ExecutorService deletePool = Executors.newSingleThreadExecutor();
@@ -40,9 +43,9 @@ public class ScreenInteractor {
 	static JLabel imageViewer;
 	static Boolean updating = Boolean.FALSE;
 	static JFrame screen;
+	static double RADIAN_DEGREES_TORATE = Math.toRadians(270);
 	
-	public static void main(String[] args) {
-		
+	public static void main(String[] args) {		
 		
 		BorderLayout bl = new BorderLayout();
 		screen = new JFrame("Screen Interactor");
@@ -271,7 +274,7 @@ public class ScreenInteractor {
 	}
 	
 	static void getLocalImage(JLabel l, Runtime runtime, int width, int imageId) throws Exception{
-		Image img = loadImageToComputer(runtime,width, imageId);
+		Image img = loadImageToComputer(runtime,width, imageId);		
 		ImageIcon icon = new ImageIcon(img);
 		l.setIcon(icon);
 		changeUpdatingStatus(false);
@@ -308,6 +311,10 @@ public class ScreenInteractor {
 
 		BufferedImage bufferedImage = ImageIO.read(file);
 		
+		if(ROTATE){
+			bufferedImage = rotate(bufferedImage);
+		}
+		
 		deletePool.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -321,5 +328,19 @@ public class ScreenInteractor {
 		return bufferedImage.getScaledInstance((bufferedImage.getWidth() / proportion) - margin,
 				(bufferedImage.getHeight() / proportion) - margin, java.awt.Image.SCALE_FAST);
 				
+	}
+	
+	static BufferedImage rotate(BufferedImage source) {
+		BufferedImage output = new BufferedImage(source.getHeight(), source.getWidth(), source.getType());
+        
+		AffineTransform transform = new AffineTransform();
+        transform.rotate(RADIAN_DEGREES_TORATE, source.getWidth()/2, source.getHeight()/2);
+        double offset = (source.getWidth()-source.getHeight())/2;
+        transform.translate(-offset,-offset);
+		
+        AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_BILINEAR);
+        op.filter(source, output);
+        
+        return output;
 	}
 }
