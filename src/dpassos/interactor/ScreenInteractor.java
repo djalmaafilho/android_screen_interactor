@@ -27,13 +27,14 @@ import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 
 public class ScreenInteractor {
-	 
-	private static final boolean ROTATE = false;
+	
+	private static final int SCREEN_UPDATE_WORKERS = 4;
+	private static final boolean ROTATE = true;
 	static String ADB_PATH = "/Users/diegodesouza/Library/Android/sdk/platform-tools/adb ";
 	static String ANDROID_FOLDER = "/sdcard/screen_capture/";
-	static String COMPUTER_FOLDER = "/Users/diegodesouza/";
+	static String COMPUTER_FOLDER = "/Users/diegodesouza/screen_capture/";
 	static String FILE_NAME = ANDROID_FOLDER+"screen";
-	static ExecutorService capturePool = Executors.newSingleThreadExecutor();
+	static ExecutorService capturePool = Executors.newFixedThreadPool(SCREEN_UPDATE_WORKERS);
 	static ExecutorService deletePool = Executors.newSingleThreadExecutor();
 	static boolean terminate = false;
 	static int proportion = 1;
@@ -41,11 +42,13 @@ public class ScreenInteractor {
 	static Runtime runtime = Runtime.getRuntime();
 	static Integer screenNumber = 1;
 	static JLabel imageViewer;
-	static Boolean updating = Boolean.FALSE;
 	static JFrame screen;
 	static double RADIAN_DEGREES_TORATE = Math.toRadians(270);
 	
-	public static void main(String[] args) {		
+	public static void main(String[] args) {
+		
+		File localFolder = new File(COMPUTER_FOLDER);
+		localFolder.mkdirs();
 		
 		BorderLayout bl = new BorderLayout();
 		screen = new JFrame("Screen Interactor");
@@ -57,7 +60,7 @@ public class ScreenInteractor {
 		JTextArea msg = new JTextArea("Resize width and heigth if necessary.\nWidth redefines screen capture dimention.");
 		msg.setEditable(false);
 		msg.requestFocus(false);
-		msg.setMargin(new Insets(10, 10, 10, 10));
+		msg.setMargin(new Insets(margin, margin, margin, margin));
 		
 		imageViewer = new JLabel();
 		imageViewer.setBackground(Color.GRAY);
@@ -210,14 +213,10 @@ public class ScreenInteractor {
 	}
 	
 	static void updateScreen() {
-		synchronized (updating) {
-			if(updating){
-				return;
-			}
-		}	
-		changeUpdatingStatus(true);
-		screenNumber++;
-		execute(imageViewer, runtime, screenNumber);
+		synchronized (screenNumber) {
+			screenNumber++;
+			execute(imageViewer, runtime, screenNumber);			
+		}
 	}
 	
 	static void execute(JLabel l, Runtime runtime, int i) {
@@ -277,13 +276,6 @@ public class ScreenInteractor {
 		Image img = loadImageToComputer(runtime,width, imageId);		
 		ImageIcon icon = new ImageIcon(img);
 		l.setIcon(icon);
-		changeUpdatingStatus(false);
-	}
-	
-	static void changeUpdatingStatus(boolean status) {
-		synchronized (updating) {
-			updating = status;
-		}
 	}
 	
 	static void tekeAndroidScreenShot(Runtime runtime, int id) throws Exception {
