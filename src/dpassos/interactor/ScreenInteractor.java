@@ -23,16 +23,20 @@ import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
 
 public class ScreenInteractor {
 	
 	private static final int SCREEN_UPDATE_WORKERS = 4;
-	private static final boolean ROTATE = true;
-	static String ADB_PATH = "/Users/diegodesouza/Library/Android/sdk/platform-tools/adb ";
+	private static final boolean ROTATE = false;
+	
+	static String DEVICE_ID = "";
+	static String DEVICE_PARAM = "";
+	static String ADB_PATH = "/Users/admin/Library/Android/sdk/platform-tools/adb ";	
 	static String ANDROID_FOLDER = "/sdcard/screen_capture/";
-	static String COMPUTER_FOLDER = "/Users/diegodesouza/screen_capture/";
+	static String COMPUTER_FOLDER = "/Users/admin/screen_capture/";
 	static String FILE_NAME = ANDROID_FOLDER+"screen";
 	static ExecutorService capturePool = Executors.newFixedThreadPool(SCREEN_UPDATE_WORKERS);
 	static ExecutorService deletePool = Executors.newSingleThreadExecutor();
@@ -43,9 +47,12 @@ public class ScreenInteractor {
 	static Integer screenNumber = 1;
 	static JLabel imageViewer;
 	static JFrame screen;
+	static JTextArea msg;
 	static double RADIAN_DEGREES_TORATE = Math.toRadians(270);
 	
 	public static void main(String[] args) {
+		
+		configureDevices();
 		
 		File localFolder = new File(COMPUTER_FOLDER);
 		localFolder.mkdirs();
@@ -56,8 +63,9 @@ public class ScreenInteractor {
 		screen.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		screen.setLayout(bl);
 		screen.setLocationRelativeTo(null);
+		screen.setAlwaysOnTop(true);
 		
-		JTextArea msg = new JTextArea("Resize width and heigth if necessary.\nWidth redefines screen capture dimention.");
+		msg = new JTextArea("Screen Interactor Device : " + DEVICE_ID);
 		msg.setEditable(false);
 		msg.requestFocus(false);
 		msg.setMargin(new Insets(margin, margin, margin, margin));
@@ -276,6 +284,7 @@ public class ScreenInteractor {
 		Image img = loadImageToComputer(runtime,width, imageId);		
 		ImageIcon icon = new ImageIcon(img);
 		l.setIcon(icon);
+		screen.setSize(icon.getIconWidth() + margin, icon.getIconHeight() + msg.getHeight() + 3 * margin);
 	}
 	
 	static void tekeAndroidScreenShot(Runtime runtime, int id) throws Exception {
@@ -320,6 +329,61 @@ public class ScreenInteractor {
 		return bufferedImage.getScaledInstance((bufferedImage.getWidth() / proportion) - margin,
 				(bufferedImage.getHeight() / proportion) - margin, java.awt.Image.SCALE_FAST);
 				
+	}
+	
+	static String listDevices(Runtime runtime) throws Exception {
+		String command = ADB_PATH +" devices ";
+		System.out.println(command);
+		Process p = runtime.exec(command);
+		p.waitFor();
+		int byteLido;
+		String str = "";
+		while((byteLido = p.getInputStream().read()) != -1) {
+			str+= (char) byteLido;
+		}
+		return str;
+	}
+	
+	static void configureDevices() {
+		try {
+			String response = listDevices(runtime);
+			String[] lines = response.split("\n");
+			if(lines == null || lines.length <=1) {
+				JOptionPane.showMessageDialog(null, "No devices try later");
+				System.exit(0);
+				return;
+			}
+			
+			String options = ""; 
+			int i = 0;
+			for(String line : lines) {
+				if(i > 0) {
+					options += " "+ line;					
+				}
+				i++;
+			}
+			String[] optionArray = options.trim().split(" "); 
+			int selected = JOptionPane.showOptionDialog(null, "Choose a device", "Devices", JOptionPane.DEFAULT_OPTION, 
+					JOptionPane.INFORMATION_MESSAGE, 
+					null, optionArray , "CANCEL");
+			if(selected != -1) {
+				String type = optionArray[selected].split("\t")[1];
+				if("device".equalsIgnoreCase(type)) {
+					DEVICE_PARAM = " -s ";	
+				}else {
+					DEVICE_PARAM = " -d ";
+				}
+				DEVICE_ID = optionArray[selected].split("\t")[0];	
+				
+				
+				ADB_PATH += DEVICE_PARAM + DEVICE_ID + " "; 				
+			}else {
+				JOptionPane.showMessageDialog(null, "No device selected try later");
+				System.exit(0);
+			}
+		} catch (Exception e2) {
+			e2.printStackTrace();
+		}
 	}
 	
 	static BufferedImage rotate(BufferedImage source) {
